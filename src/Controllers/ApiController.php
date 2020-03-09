@@ -31,8 +31,12 @@ class ApiController extends Controller {
 
 	private function getToken() {
         return array(
-                "token" => session_id(),
-                "username" => $_SESSION["username"]
-            );
+            "token" => session_id(),
+            "username" => $_SESSION["username"]
+        );
 	}
+
+	public function test($request, $response){
+        return $response->withStatus(501);
+    }
 }
