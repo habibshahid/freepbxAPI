@@ -2,7 +2,7 @@
 
 namespace App\Controllers;
 
-class CustomerController extends Controller {
+class FreePbxController extends Controller {
 
 	public function getAll($request, $response) {
 	    $sql = "SELECT * FROM customers;";

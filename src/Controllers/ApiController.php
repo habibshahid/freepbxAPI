@@ -2,7 +2,7 @@
 
 namespace App\Controllers;
 
-class PersonController extends Controller {
+class ApiController extends Controller {
 
 	public function check($request, $response) {
 	    if(isset($_SESSION["id"])) {

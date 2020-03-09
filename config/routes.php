@@ -8,8 +8,8 @@ $app->options('/{routes:.+}', function ($request, $response, $args) {
 
 $app->get('/', 'HomeController:landing');
 
-$app->post('/person', 'PersonController:login');
-$app->get('/person', 'PersonController:check');
-$app->delete('/person', 'PersonController:logout');
+$app->post('/api', 'ApiController:login');
+$app->get('/api', 'ApiController:check');
+$app->delete('/api', 'ApiController:logout');
 
-$app->get('/customer', 'CustomerController:getAll');
+$app->get('/api/sip', 'FreePbxController:getAll');
