@@ -27,7 +27,8 @@ POST: http://localhost/app/api/v1/sipExtension
   "extension": "1000",
   "secret": "{strong password}",
   "displayname": "John Doe",
-  "devicetype": "sip"
+  "devicetype": "sip",
+  "create_user": "1"
 }
 ```
 

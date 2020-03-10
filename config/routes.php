@@ -17,3 +17,7 @@ $app->delete('/api/v1', 'ApiController:logout');
 $app->get('/api/v1/sipExtensions', 'FreePbxController:getAllSIPExtensions');
 $app->post('/api/v1/sipExtension', 'FreePbxController:createSIPExtension');
 
+//SIP Trunks
+$app->get('/api/v1/sipTrunks', 'FreePbxController:getAllSIPTrunks');
+$app->post('/api/v1/sipTrunk', 'FreePbxController:createSIPTrunk');
+
