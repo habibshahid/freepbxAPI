@@ -1,16 +1,13 @@
 ## Setup
 $ composer install  
 
-## Simple DB base
-Run dbinit.sql into MySQL  
-
 ## Endpoints
-### Person
+### api/v1
 **Check if user is logged in, if so returns username and token**  
-GET: http://localhost/app/person  
+GET: http://localhost/app/api/v1  
 
 **Attempt to login, currently simply checks if username is drum**  
-POST: http://localhost/app/person
+POST: http://localhost/app/api/v1
 ```json
 {
   "username": "drum",
@@ -19,11 +16,20 @@ POST: http://localhost/app/person
 ```
 
 **Logout**  
-DELETE: http://localhost/app/person
+DELETE: http://localhost/app/api/v1
 
-### Customers (Requires auth)
+### Get all Extension (Requires auth)
 **Return all**  
-GET: http://localhost/app/customer  
+GET: http://localhost/app/api/v1/sipExtensions
+POST: http://localhost/app/api/v1/sipExtension
+```json
+{
+  "extension": "1000",
+  "secret": "{strong password}",
+  "displayname": "John Doe",
+  "devicetype": "sip"
+}
+```
 
 ## Configuration
 **Changes you may want to make**  
