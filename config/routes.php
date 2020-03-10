@@ -5,11 +5,15 @@ $app->options('/{routes:.+}', function ($request, $response, $args) {
     return $response;
 });
 
-
+//routes
 $app->get('/', 'HomeController:landing');
 
-$app->post('/api', 'ApiController:login');
-$app->get('/api', 'ApiController:check');
-$app->delete('/api', 'ApiController:logout');
+//Login Auth
+$app->post('/api/v1', 'ApiController:login');
+$app->get('/api/v1', 'ApiController:check');
+$app->delete('/api/v1', 'ApiController:logout');
 
-$app->get('/api/sip', 'FreePbxController:getAll');
+//SIP Extensions
+$app->get('/api/v1/sipExtensions', 'FreePbxController:getAllSIPExtensions');
+$app->post('/api/v1/sipExtension', 'FreePbxController:createSIPExtension');
+

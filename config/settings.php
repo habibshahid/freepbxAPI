@@ -14,6 +14,6 @@ $settings['public'] = $settings['root'] . '/public';
 $settings['db']['host']   = '165.22.193.196';
 $settings['db']['user']   = 'habibshahid';
 $settings['db']['pass']   = 'habibshahid1221';
-$settings['db']['dbname'] = 'slimapp';
+$settings['db']['dbname'] = 'asterisk';
 
 return $settings;

@@ -8,8 +8,12 @@ class ApiController extends Controller {
 	    if(isset($_SESSION["id"])) {
 			return $response->withJson($this->getToken());
 	    }
-
-	    return $response->withStatus(401);		
+        else{
+            return $response->withJson(array(
+                'code' => 401,
+                'message' => 'Not Allowed'
+            ));
+        }
 	}
 
 	public function login($request, $response) {
@@ -20,13 +24,20 @@ class ApiController extends Controller {
 	        $_SESSION["username"] = $body["username"];
 	        return $response->withJson($this->getToken());
 	    }
-
-	    return $response->withStatus(401);		
+	    else{
+            return $response->withJson(array(
+                'code' => 401,
+                'message' => 'Not Allowed'
+            ));
+        }
 	}
 
 	public function logout($request, $response) {
 	    session_destroy();
-	    return $response->withStatus(204);		
+        return $response->withJson(array(
+            'code' => 204,
+            'message' => 'Logged Out.'
+        ));
 	}
 
 	private function getToken() {
@@ -35,8 +46,4 @@ class ApiController extends Controller {
             "username" => $_SESSION["username"]
         );
 	}
-
-	public function test($request, $response){
-        return $response->withStatus(501);
-    }
 }

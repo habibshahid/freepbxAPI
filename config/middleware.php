@@ -1,14 +1,17 @@
 <?php
 // auth middleware
 $app->add(function ($request, $response, callable $next) {
-    $skip = ["", "person"];
+    $skip = ["", "api"];
 
     $path = $request->getUri()->getPath();
     $base = explode("/", $path, 2)[0];
 
     # if not auth'd and route requires auth: 401
     if(!isset($_SESSION["id"]) && !in_array($base, $skip)) {
-        return $response->withStatus(401);
+        return $response->withJson(array(
+            'code' => 401,
+            'message' => 'Not Allowed.'
+        ));
     }
 
     return $next($request, $response);
