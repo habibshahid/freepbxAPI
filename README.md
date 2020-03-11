@@ -1,13 +1,24 @@
+## Install Composer (Cent OS)
+$ sudo curl -sS https://getcomposer.org/installer | php
+
+$ mv composer.phar /usr/local/bin/composer
+
 ## Setup
+$ cd /var/www/html/
+
+$ git clone https://github.com/habibshahid/freepbxAPI.git
+
+$ cd freepbxAPI
+
 $ composer install  
 
 ## Endpoints
 ### api/v1
 **Check if user is logged in, if so returns username and token**  
-GET: http://localhost/app/api/v1  
+GET: http://localhost/freepbxAPI/api/v1  
 
 **Attempt to login, currently simply checks if username is drum**  
-POST: http://localhost/app/api/v1
+POST: http://localhost/freepbxAPI/api/v1
 ```json
 {
   "username": "drum",
@@ -16,12 +27,13 @@ POST: http://localhost/app/api/v1
 ```
 
 **Logout**  
-DELETE: http://localhost/app/api/v1
+DELETE: http://localhost/freepbxAPI/api/v1
 
-### Get all Extension (Requires auth)
-**Return all**  
-GET: http://localhost/app/api/v1/sipExtensions
-POST: http://localhost/app/api/v1/sipExtension
+### SIP Extensions (Requires auth)
+GET: http://localhost/freepbxAPI/api/v1/sipExtensions
+```Returns all extensions```  
+
+POST: http://localhost/freepbxAPI/api/v1/sipExtension
 ```json
 {
   "extension": "1000",

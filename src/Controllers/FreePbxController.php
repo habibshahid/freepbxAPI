@@ -16,9 +16,8 @@ class FreePbxController extends Controller
         );
     }
 
-    public function getAllSIPExtensions($request, $response)
-    {
-        $sql = "SELECT * FROM sip;";
+    public function getAllSIPExtensions($request, $response){
+        $sql = "SELECT * FROM devices;";
         $stmt = $this->c->db->query($sql);
         $sipExtensions = $stmt->fetchAll();
 
@@ -93,8 +92,7 @@ class FreePbxController extends Controller
         }
     }
 
-    public function createSIPExtension($request, $response)
-    {
+    public function createSIPExtension($request, $response){
         global $chan_drivers;
         $body = $request->getParsedBody();
 
@@ -867,6 +865,17 @@ class FreePbxController extends Controller
         }
     }
 
+    public function getAllSIPTrunks($request, $response){
+        $sql = "SELECT * FROM trunks;";
+        $stmt = $this->c->db->query($sql);
+        $sipExtensions = $stmt->fetchAll();
+
+        return $response->withJson(array(
+            'code' => 200,
+            'data' => $sipExtensions
+        ));
+    }
+
     public function createSIPTrunk($request, $response){
         global $chan_drivers;
         $body = $request->getParsedBody();
@@ -1098,6 +1107,16 @@ class FreePbxController extends Controller
         return $response->withJson(array(
             'code' => 200,
             'data' => array('trunk' => $body['trunk']['name'], 'result' => $result)
+        ));
+    }
+
+    public function updateSIPTrunk($request, $response, $args){
+        global $chan_drivers;
+        $body = $request->getParsedBody();
+
+        return $response->withJson(array(
+            'code' => 200,
+            'data' => array('trunk' => $body['trunk']['name'], 'result' => $args)
         ));
     }
 }
