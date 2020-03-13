@@ -49,4 +49,5 @@ POST: http://localhost/freepbxAPI/api/v1/sipExtension
 Session name: config/bootstrap.php  
 CORS Origins: config/middleware.php  
 DB Connection: config/settings.php
+SQL Lite Connection: config/settings.php
 
