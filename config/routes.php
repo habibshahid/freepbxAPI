@@ -30,3 +30,9 @@ $app->get('/api/v1/inboundRoutes', 'FreePbxController:getAllInboundRoutes');
 $app->post('/api/v1/inboundRoute', 'FreePbxController:createInboundRoute');
 $app->put('/api/v1/inboundRoute/{id}', 'FreePbxController:updateInboundRoute'); //todo
 $app->delete('/api/v1/inboundRoute/{id}', 'FreePbxController:deleteInboundRoute'); //todo
+
+//Outbound Routes
+$app->get('/api/v1/outboundRoutes', 'FreePbxController:getAllOutboundRoutes');
+$app->post('/api/v1/outboundRoute', 'FreePbxController:createOutboundRoute');
+$app->put('/api/v1/outboundRoute/{id}', 'FreePbxController:updateOutboundRoute'); //todo
+$app->delete('/api/v1/outboundRoute/{id}', 'FreePbxController:deleteOutboundRoute'); //todo

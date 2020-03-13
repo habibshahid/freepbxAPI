@@ -9,6 +9,7 @@ class FreePbxController extends Controller
         parent::__construct($container);
         global $chan_drivers;
         global $destinationTypes;
+        global $timezones;
 
         $chan_drivers = array(
             'sip' => 'chan_sip',
@@ -27,7 +28,438 @@ class FreePbxController extends Controller
             'queue'             =>  'ext-queues,{destination},1',
             'ring_group'        =>  'ext-group,{destination},1',
             'terminate'         =>  'app-blackhole,{destination},1',
-            'time_condition'    =>  'timeconditions,{destination},1'
+            'time_condition'    =>  'timeconditions,{destination},1',
+            'trunks'            =>  'ext-trunk,{destination},1'
+        );
+
+        $timezones = array(
+            "default",
+            "Africa/Abidjan",
+            "Africa/Accra",
+            "Africa/Addis_Ababa",
+            "Africa/Algiers",
+            "Africa/Asmara",
+            "Africa/Bamako",
+            "Africa/Bangui",
+            "Africa/Banjul",
+            "Africa/Bissau",
+            "Africa/Blantyre",
+            "Africa/Brazzaville",
+            "Africa/Bujumbura",
+            "Africa/Cairo",
+            "Africa/Casablanca",
+            "Africa/Ceuta",
+            "Africa/Conakry",
+            "Africa/Dakar",
+            "Africa/Dar_es_Salaam",
+            "Africa/Djibouti",
+            "Africa/Douala",
+            "Africa/El_Aaiun",
+            "Africa/Freetown",
+            "Africa/Gaborone",
+            "Africa/Harare",
+            "Africa/Johannesburg",
+            "Africa/Juba",
+            "Africa/Kampala",
+            "Africa/Khartoum",
+            "Africa/Kigali",
+            "Africa/Kinshasa",
+            "Africa/Lagos",
+            "Africa/Libreville",
+            "Africa/Lome",
+            "Africa/Luanda",
+            "Africa/Lubumbashi",
+            "Africa/Lusaka",
+            "Africa/Malabo",
+            "Africa/Maputo",
+            "Africa/Maseru",
+            "Africa/Mbabane",
+            "Africa/Mogadishu",
+            "Africa/Monrovia",
+            "Africa/Nairobi",
+            "Africa/Ndjamena",
+            "Africa/Niamey",
+            "Africa/Nouakchott",
+            "Africa/Ouagadougou",
+            "Africa/Porto-Novo",
+            "Africa/Sao_Tome",
+            "Africa/Tripoli",
+            "Africa/Tunis",
+            "Africa/Windhoek",
+            "America/Adak",
+            "America/Anchorage",
+            "America/Anguilla",
+            "America/Antigua",
+            "America/Araguaina",
+            "America/Argentina/Buenos_Aires",
+            "America/Argentina/Catamarca",
+            "America/Argentina/Cordoba",
+            "America/Argentina/Jujuy",
+            "America/Argentina/La_Rioja",
+            "America/Argentina/Mendoza",
+            "America/Argentina/Rio_Gallegos",
+            "America/Argentina/Salta",
+            "America/Argentina/San_Juan",
+            "America/Argentina/San_Luis",
+            "America/Argentina/Tucuman",
+            "America/Argentina/Ushuaia",
+            "America/Aruba",
+            "America/Asuncion",
+            "America/Atikokan",
+            "America/Bahia",
+            "America/Bahia_Banderas",
+            "America/Barbados",
+            "America/Belem",
+            "America/Belize",
+            "America/Blanc-Sablon",
+            "America/Boa_Vista",
+            "America/Bogota",
+            "America/Boise",
+            "America/Cambridge_Bay",
+            "America/Campo_Grande",
+            "America/Cancun",
+            "America/Caracas",
+            "America/Cayenne",
+            "America/Cayman",
+            "America/Chicago",
+            "America/Chihuahua",
+            "America/Costa_Rica",
+            "America/Creston",
+            "America/Cuiaba",
+            "America/Curacao",
+            "America/Danmarkshavn",
+            "America/Dawson",
+            "America/Dawson_Creek",
+            "America/Denver",
+            "America/Detroit",
+            "America/Dominica",
+            "America/Edmonton",
+            "America/Eirunepe",
+            "America/El_Salvador",
+            "America/Fort_Nelson",
+            "America/Fortaleza",
+            "America/Glace_Bay",
+            "America/Godthab",
+            "America/Goose_Bay",
+            "America/Grand_Turk",
+            "America/Grenada",
+            "America/Guadeloupe",
+            "America/Guatemala",
+            "America/Guayaquil",
+            "America/Guyana",
+            "America/Halifax",
+            "America/Havana",
+            "America/Hermosillo",
+            "America/Indiana/Indianapolis",
+            "America/Indiana/Knox",
+            "America/Indiana/Marengo",
+            "America/Indiana/Petersburg",
+            "America/Indiana/Tell_City",
+            "America/Indiana/Vevay",
+            "America/Indiana/Vincennes",
+            "America/Indiana/Winamac",
+            "America/Inuvik",
+            "America/Iqaluit",
+            "America/Jamaica",
+            "America/Juneau",
+            "America/Kentucky/Louisville",
+            "America/Kentucky/Monticello",
+            "America/Kralendijk",
+            "America/La_Paz",
+            "America/Lima",
+            "America/Los_Angeles",
+            "America/Lower_Princes",
+            "America/Maceio",
+            "America/Managua",
+            "America/Manaus",
+            "America/Marigot",
+            "America/Martinique",
+            "America/Matamoros",
+            "America/Mazatlan",
+            "America/Menominee",
+            "America/Merida",
+            "America/Metlakatla",
+            "America/Mexico_City",
+            "America/Miquelon",
+            "America/Moncton",
+            "America/Monterrey",
+            "America/Montevideo",
+            "America/Montserrat",
+            "America/Nassau",
+            "America/New_York",
+            "America/Nipigon",
+            "America/Nome",
+            "America/Noronha",
+            "America/North_Dakota/Beulah",
+            "America/North_Dakota/Center",
+            "America/North_Dakota/New_Salem",
+            "America/Ojinaga",
+            "America/Panama",
+            "America/Pangnirtung",
+            "America/Paramaribo",
+            "America/Phoenix",
+            "America/Port-au-Prince",
+            "America/Port_of_Spain",
+            "America/Porto_Velho",
+            "America/Puerto_Rico",
+            "America/Punta_Arenas",
+            "America/Rainy_River",
+            "America/Rankin_Inlet",
+            "America/Recife",
+            "America/Regina",
+            "America/Resolute",
+            "America/Rio_Branco",
+            "America/Santarem",
+            "America/Santiago",
+            "America/Santo_Domingo",
+            "America/Sao_Paulo",
+            "America/Scoresbysund",
+            "America/Sitka",
+            "America/St_Barthelemy",
+            "America/St_Johns",
+            "America/St_Kitts",
+            "America/St_Lucia",
+            "America/St_Thomas",
+            "America/St_Vincent",
+            "America/Swift_Current",
+            "America/Tegucigalpa",
+            "America/Thule",
+            "America/Thunder_Bay",
+            "America/Tijuana",
+            "America/Toronto",
+            "America/Tortola",
+            "America/Vancouver",
+            "America/Whitehorse",
+            "America/Winnipeg",
+            "America/Yakutat",
+            "America/Yellowknife",
+            "Antarctica/Casey",
+            "Antarctica/Davis",
+            "Antarctica/DumontDUrville",
+            "Antarctica/Macquarie",
+            "Antarctica/Mawson",
+            "Antarctica/McMurdo",
+            "Antarctica/Palmer",
+            "Antarctica/Rothera",
+            "Antarctica/Syowa",
+            "Antarctica/Troll",
+            "Antarctica/Vostok",
+            "Arctic/Longyearbyen",
+            "Asia/Aden",
+            "Asia/Almaty",
+            "Asia/Amman",
+            "Asia/Anadyr",
+            "Asia/Aqtau",
+            "Asia/Aqtobe",
+            "Asia/Ashgabat",
+            "Asia/Atyrau",
+            "Asia/Baghdad",
+            "Asia/Bahrain",
+            "Asia/Baku",
+            "Asia/Bangkok",
+            "Asia/Barnaul",
+            "Asia/Beirut",
+            "Asia/Bishkek",
+            "Asia/Brunei",
+            "Asia/Chita",
+            "Asia/Choibalsan",
+            "Asia/Colombo",
+            "Asia/Damascus",
+            "Asia/Dhaka",
+            "Asia/Dili",
+            "Asia/Dubai",
+            "Asia/Dushanbe",
+            "Asia/Famagusta",
+            "Asia/Gaza",
+            "Asia/Hebron",
+            "Asia/Ho_Chi_Minh",
+            "Asia/Hong_Kong",
+            "Asia/Hovd",
+            "Asia/Irkutsk",
+            "Asia/Jakarta",
+            "Asia/Jayapura",
+            "Asia/Jerusalem",
+            "Asia/Kabul",
+            "Asia/Kamchatka",
+            "Asia/Karachi",
+            "Asia/Kathmandu",
+            "Asia/Khandyga",
+            "Asia/Kolkata",
+            "Asia/Krasnoyarsk",
+            "Asia/Kuala_Lumpur",
+            "Asia/Kuching",
+            "Asia/Kuwait",
+            "Asia/Macau",
+            "Asia/Magadan",
+            "Asia/Makassar",
+            "Asia/Manila",
+            "Asia/Muscat",
+            "Asia/Nicosia",
+            "Asia/Novokuznetsk",
+            "Asia/Novosibirsk",
+            "Asia/Omsk",
+            "Asia/Oral",
+            "Asia/Phnom_Penh",
+            "Asia/Pontianak",
+            "Asia/Pyongyang",
+            "Asia/Qatar",
+            "Asia/Qostanay",
+            "Asia/Qyzylorda",
+            "Asia/Riyadh",
+            "Asia/Sakhalin",
+            "Asia/Samarkand",
+            "Asia/Seoul",
+            "Asia/Shanghai",
+            "Asia/Singapore",
+            "Asia/Srednekolymsk",
+            "Asia/Taipei",
+            "Asia/Tashkent",
+            "Asia/Tbilisi",
+            "Asia/Tehran",
+            "Asia/Thimphu",
+            "Asia/Tokyo",
+            "Asia/Tomsk",
+            "Asia/Ulaanbaatar",
+            "Asia/Urumqi",
+            "Asia/Ust-Nera",
+            "Asia/Vientiane",
+            "Asia/Vladivostok",
+            "Asia/Yakutsk",
+            "Asia/Yangon",
+            "Asia/Yekaterinburg",
+            "Asia/Yerevan",
+            "Atlantic/Azores",
+            "Atlantic/Bermuda",
+            "Atlantic/Canary",
+            "Atlantic/Cape_Verde",
+            "Atlantic/Faroe",
+            "Atlantic/Madeira",
+            "Atlantic/Reykjavik",
+            "Atlantic/South_Georgia",
+            "Atlantic/St_Helena",
+            "Atlantic/Stanley",
+            "Australia/Adelaide",
+            "Australia/Brisbane",
+            "Australia/Broken_Hill",
+            "Australia/Currie",
+            "Australia/Darwin",
+            "Australia/Eucla",
+            "Australia/Hobart",
+            "Australia/Lindeman",
+            "Australia/Lord_Howe",
+            "Australia/Melbourne",
+            "Australia/Perth",
+            "Australia/Sydney",
+            "Europe/Amsterdam",
+            "Europe/Andorra",
+            "Europe/Astrakhan",
+            "Europe/Athens",
+            "Europe/Belgrade",
+            "Europe/Berlin",
+            "Europe/Bratislava",
+            "Europe/Brussels",
+            "Europe/Bucharest",
+            "Europe/Budapest",
+            "Europe/Busingen",
+            "Europe/Chisinau",
+            "Europe/Copenhagen",
+            "Europe/Dublin",
+            "Europe/Gibraltar",
+            "Europe/Guernsey",
+            "Europe/Helsinki",
+            "Europe/Isle_of_Man",
+            "Europe/Istanbul",
+            "Europe/Jersey",
+            "Europe/Kaliningrad",
+            "Europe/Kiev",
+            "Europe/Kirov",
+            "Europe/Lisbon",
+            "Europe/Ljubljana",
+            "Europe/London",
+            "Europe/Luxembourg",
+            "Europe/Madrid",
+            "Europe/Malta",
+            "Europe/Mariehamn",
+            "Europe/Minsk",
+            "Europe/Monaco",
+            "Europe/Moscow",
+            "Europe/Oslo",
+            "Europe/Paris",
+            "Europe/Podgorica",
+            "Europe/Prague",
+            "Europe/Riga",
+            "Europe/Rome",
+            "Europe/Samara",
+            "Europe/San_Marino",
+            "Europe/Sarajevo",
+            "Europe/Saratov",
+            "Europe/Simferopol",
+            "Europe/Skopje",
+            "Europe/Sofia",
+            "Europe/Stockholm",
+            "Europe/Tallinn",
+            "Europe/Tirane",
+            "Europe/Ulyanovsk",
+            "Europe/Uzhgorod",
+            "Europe/Vaduz",
+            "Europe/Vatican",
+            "Europe/Vienna",
+            "Europe/Vilnius",
+            "Europe/Volgograd",
+            "Europe/Warsaw",
+            "Europe/Zagreb",
+            "Europe/Zaporozhye",
+            "Europe/Zurich",
+            "Indian/Antananarivo",
+            "Indian/Chagos",
+            "Indian/Christmas",
+            "Indian/Cocos",
+            "Indian/Comoro",
+            "Indian/Kerguelen",
+            "Indian/Mahe",
+            "Indian/Maldives",
+            "Indian/Mauritius",
+            "Indian/Mayotte",
+            "Indian/Reunion",
+            "Pacific/Apia",
+            "Pacific/Auckland",
+            "Pacific/Bougainville",
+            "Pacific/Chatham",
+            "Pacific/Chuuk",
+            "Pacific/Easter",
+            "Pacific/Efate",
+            "Pacific/Enderbury",
+            "Pacific/Fakaofo",
+            "Pacific/Fiji",
+            "Pacific/Funafuti",
+            "Pacific/Galapagos",
+            "Pacific/Gambier",
+            "Pacific/Guadalcanal",
+            "Pacific/Guam",
+            "Pacific/Honolulu",
+            "Pacific/Kiritimati",
+            "Pacific/Kosrae",
+            "Pacific/Kwajalein",
+            "Pacific/Majuro",
+            "Pacific/Marquesas",
+            "Pacific/Midway",
+            "Pacific/Nauru",
+            "Pacific/Niue",
+            "Pacific/Norfolk",
+            "Pacific/Noumea",
+            "Pacific/Pago_Pago",
+            "Pacific/Palau",
+            "Pacific/Pitcairn",
+            "Pacific/Pohnpei",
+            "Pacific/Port_Moresby",
+            "Pacific/Rarotonga",
+            "Pacific/Saipan",
+            "Pacific/Tahiti",
+            "Pacific/Tarawa",
+            "Pacific/Tongatapu",
+            "Pacific/Wake",
+            "Pacific/Wallis",
+            "UTC"
         );
     }
 
@@ -218,6 +650,19 @@ class FreePbxController extends Controller
         }
         $devicesResult = $stmt->execute();
         $result['devices'] = $devicesResult;
+
+        $followMeStrategries = array(
+            'ringallv2',
+            'ringallv2-prim',
+            'ringall',
+            'ringall-prim',
+            'hunt',
+            'hunt-prim',
+            'memoryhunt',
+            'memoryhunt-prim',
+            'firstavailable',
+            'firstnotonphone'
+        );
 
         $findmefollow = array(
             'grpnum' => $body['extension'],
@@ -1025,19 +1470,19 @@ class FreePbxController extends Controller
         $trunkId = ($this->getTrunkId()) ? $this->getTrunkId() + 1 : 1;
 
         $trunk = array(
-            'trunkid' => $trunkId,
-            'tech' => $body['trunk']['tech'],
-            'name' => trim($body['trunk']['name']),
-            'channelid' => (isset($body['peercontext']['name']) && $body['trunk']['tech'] == 'sip') ? $body['peercontext']['name'] : trim($body['trunk']['name']),
-            'outcid' => (isset($body['trunk']['outcid'])) ? $body['trunk']['outcid'] : "",
-            'keepcid' => (isset($body['trunk']['keepcid'])) ? $body['trunk']['keepcid'] : "off",
-            'maxchans' => (isset($body['trunk']['maxchans'])) ? $body['trunk']['maxchans'] : "",
-            'failscript' => (isset($body['trunk']['failscript'])) ? $body['trunk']['failscript'] : "",
+            'trunkid'       => $trunkId,
+            'tech'          => $body['trunk']['tech'],
+            'name'          => trim($body['trunk']['name']),
+            'channelid'     => (isset($body['peercontext']['name']) && $body['trunk']['tech'] == 'sip') ? $body['peercontext']['name'] : trim($body['trunk']['name']),
+            'outcid'        => (isset($body['trunk']['outcid'])) ? $body['trunk']['outcid'] : "",
+            'keepcid'       => (isset($body['trunk']['keepcid'])) ? $body['trunk']['keepcid'] : "off",
+            'maxchans'      => (isset($body['trunk']['maxchans'])) ? $body['trunk']['maxchans'] : "",
+            'failscript'    => (isset($body['trunk']['failscript'])) ? $body['trunk']['failscript'] : "",
             'dialoutprefix' => (isset($body['trunk']['dialoutprefix'])) ? $body['trunk']['dialoutprefix'] : "",
-            'usercontext' => (isset($body['usercontext']['name']) && $body['trunk']['tech'] != 'pjsip') ? $body['usercontext']['name'] : "",
-            'provider' => (isset($body['trunk']['provider'])) ? $body['trunk']['provider'] : "",
-            'disabled' => (isset($body['trunk']['disabled'])) ? $body['trunk']['disabled'] : "off",
-            'continue' => (isset($body['trunk']['continue'])) ? $body['trunk']['continue'] : "off",
+            'usercontext'   => (isset($body['usercontext']['name']) && $body['trunk']['tech'] != 'pjsip') ? $body['usercontext']['name'] : "",
+            'provider'      => (isset($body['trunk']['provider'])) ? $body['trunk']['provider'] : "",
+            'disabled'      => (isset($body['trunk']['disabled'])) ? $body['trunk']['disabled'] : "off",
+            'continue'      => (isset($body['trunk']['continue'])) ? $body['trunk']['continue'] : "off",
         );
 
         $trunkSQL = "insert into trunks (trunkid, tech, channelid, name, outcid, keepcid, maxchans, failscript, dialoutprefix, usercontext, provider, disabled, `continue`) values (:trunkid, :tech, :channelid, :name, :outcid, :keepcid, :maxchans, :failscript, :dialoutprefix, :usercontext, :provider, :disabled, :continue)";
@@ -1051,11 +1496,11 @@ class FreePbxController extends Controller
         if (isset($body['dialpatterns']) && count($body['dialpatterns']) > 0) {
             foreach ($body['dialpatterns'] as $dialPattern) {
                 $dialPatterns[] = array(
-                    'trunkid' => $trunkId,
-                    'match_pattern_prefix' => (isset($dialPattern['match_pattern_prefix'])) ? $dialPattern['match_pattern_prefix'] : "",
-                    'match_pattern_pass' => (isset($dialPattern['match_pattern_pass'])) ? $dialPattern['match_pattern_prefix'] : "",
-                    'prepend_digits' => (isset($dialPattern['prepend_digits'])) ? $dialPattern['prepend_digits'] : "",
-                    'seq' => (isset($dialPattern['seq'])) ? $dialPattern['seq'] : 0,
+                    'trunkid'               => $trunkId,
+                    'match_pattern_prefix'  => (isset($dialPattern['match_pattern_prefix'])) ? $dialPattern['match_pattern_prefix'] : "",
+                    'match_pattern_pass'    => (isset($dialPattern['match_pattern_pass'])) ? $dialPattern['match_pattern_prefix'] : "",
+                    'prepend_digits'        => (isset($dialPattern['prepend_digits'])) ? $dialPattern['prepend_digits'] : "",
+                    'seq'                   => (isset($dialPattern['seq'])) ? $dialPattern['seq'] : 0,
                 );
             }
 
@@ -1241,7 +1686,7 @@ class FreePbxController extends Controller
                 'data' => 'Destination not defined.'
             ));
         }
-        elseif(!isset($body['destination_type']) || !array_key_exists($body['destination_type'], $destinationTypes)){
+        elseif(isset($body['destination_type']) && !array_key_exists($body['destination_type'], $destinationTypes)){
             $output = implode(', ', array_map(
                 function ($v, $k) { return sprintf("%s", $k); },
                 $destinationTypes,
@@ -1252,6 +1697,18 @@ class FreePbxController extends Controller
                 'code' => 501,
                 'data' => 'Destination Type not defined. Possible Values (' . $output . ')'
             ));
+        }
+        elseif(isset($body['destination'])){
+            $getDestinationId = $this->getDestinationIdByType($body['destination_type'], $body['destination']);
+            if($getDestinationId){
+                $body['destination'] = $getDestinationId;
+            }
+            else{
+                return $response->withJson(array(
+                    'code' => 501,
+                    'data' => 'Invalid Destination Name. Try again with correct name.'
+                ));
+            }
         }
 
         $incoming = array(
@@ -1338,7 +1795,7 @@ class FreePbxController extends Controller
                 'extension'     =>  $body['did'],
                 'cidnum'        =>  (isset($body['cidnum'])) ? $body['cidnum'] : '',
                 'callrecording' =>  (isset($body['callrecording']) && !in_array($body['callrecording'], $recordingValues)) ? $body['callrecording'] : 'dontcare',
-                'display'       =>  (isset($body['display'])) ? $body['display'] : 'did'
+                'display'       =>  'did'
             );
 
             $callRecordingSQL = "insert into callrecording_module (extension, cidnum, callrecording, display) values (:extension, :cidnum, :callrecording, :display);";
@@ -1354,5 +1811,281 @@ class FreePbxController extends Controller
             'code' => 200,
             'data' => $result
         ));
+    }
+
+    //Outbound Routes
+    private function checkDuplicateOutboundRouteName($name){
+        $sql = "SELECT * FROM outbound_routes where name = '" . $name . "';";
+        $stmt = $this->c->db->query($sql);
+        $duplicate = $stmt->fetchAll();
+
+        if (count($duplicate) > 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public function getAllOutboundRoutes($request, $response){
+        $sql = "SELECT * FROM outbound_routes;";
+        $stmt = $this->c->db->query($sql);
+        $outboundRoutes = $stmt->fetchAll();
+
+        return $response->withJson(array(
+            'code' => 200,
+            'data' => $outboundRoutes
+        ));
+    }
+
+    public function createOutboundRoute($request, $response){
+        global $destinationTypes, $timezones;
+        $body = $request->getParsedBody();
+
+        if((!isset($body['route']['name']) || $body['route']['name'] == '') || $this->checkDuplicateOutboundRouteName($body['route']['name'])){
+            return $response->withJson(array(
+                'code' => 501,
+                'data' => 'Name not defined or Duplicate.'
+            ));
+        }
+        elseif((!isset($body['route']['emergency_route']) || $body['route']['emergency_route'] != '') && (!isset($body['route']['intracompany_route'])  || $body['route']['intracompany_route'] != '')){
+            return $response->withJson(array(
+                'code' => 501,
+                'data' => 'Emergency and Intra Company cannot be selected at the same time.'
+            ));
+        }
+        elseif(isset($body['route']['timezone']) && !in_array($body['route']['timezone'], $timezones)){
+            return $response->withJson(array(
+                'code' => 501,
+                'data' => "Timezone not correct. Possible Values ('" . implode("', '" , $timezones) . "')"
+            ));
+        }
+        elseif(!isset($body['dialpatterns']) || count($body['dialpatterns']) <= 0 ){
+            return $response->withJson(array(
+                'code' => 501,
+                'data' => "Dial Pattern not defined."
+            ));
+        }
+        elseif(isset($body['route']['failed_destination_type']) && !array_key_exists($body['route']['failed_destination_type'], $destinationTypes)){
+            $output = implode(', ', array_map(
+                function ($v, $k) { return sprintf("%s", $k); },
+                $destinationTypes,
+                array_keys($destinationTypes)
+            ));
+
+            return $response->withJson(array(
+                'code' => 501,
+                'data' => 'Destination Type is Invalid. Possible Values (' . $output . ')'
+            ));
+        }
+        elseif(isset($body['route']['failed_destination'])){
+            $getDestinationId = $this->getDestinationIdByType($body['route']['failed_destination_type'], $body['route']['failed_destination']);
+            if($getDestinationId){
+                $body['route']['failed_destination'] = $getDestinationId;
+            }
+            else{
+                return $response->withJson(array(
+                    'code' => 501,
+                    'data' => 'Invalid Destination Name. Try again with correct name.'
+                ));
+            }
+        }
+        elseif(!isset($body['trunks']) || count($body['trunks']) <= 0 ){
+            return $response->withJson(array(
+                'code' => 501,
+                'data' => "Outbound Trunks not defined."
+            ));
+        }
+
+        $outboundRoutes = array(
+            "name"                  =>  $body['route']['name'],
+            "outcid"                =>  (isset($body['route']['outcid'])) ? $body['route']['outcid'] : "",
+            "outcid_mode"           =>  (isset($body['route']['outcid']) && $body['route']['outcid'] == 1) ? "override_extension" : "",
+            "password"              =>  (isset($body['route']['password'])) ? $body['route']['password'] : "",
+            "emergency_route"       =>  (isset($body['route']['emergency_route']) && $body['route']['emergency_route'] == 1) ? "YES" : "",
+            "intracompany_route"    =>  (isset($body['route']['intracompany_route']) && $body['route']['intracompany_route'] == 1) ? "YES" : "",
+            "mohclass"              =>  (isset($body['route']['mohclass'])) ? $body['route']['mohclass'] : "none",
+            "time_group_id"         =>  (isset($body['route']['time_group_id'])) ? $this->getDestinationIdByType('time_group', $body['route']['time_group_id']) : "",
+            "dest"                  =>  $this->matchVariables($destinationTypes[$body['route']['failed_destination_type']], array('destination' => $body['route']['failed_destination'])),
+            "time_mode"             =>  "",
+            "calendar_id"           =>  "null",
+            "calendar_group_id"     =>  "null",
+            "timezone"              =>  (isset($body['route']['timezone'])) ? $body['route']['timezone'] : 'default'
+        );
+
+        $outboundRoutesSQL = "insert into outbound_routes (name, outcid, outcid_mode, password, emergency_route, intracompany_route, mohclass, time_group_id, dest, time_mode, calendar_id, calendar_group_id, timezone) values (:name, :outcid, :outcid_mode, :password, :emergency_route, :intracompany_route, :mohclass, :time_group_id, :dest, :time_mode, :calendar_id, :calendar_group_id, :timezone)";
+        $stmt = $this->c->db->prepare($outboundRoutesSQL);
+        foreach ($outboundRoutes as $key => &$val) {
+            $stmt->bindParam($key, $val);
+        }
+        $outboundRoutesResult = $stmt->execute();
+        $outboundRouteId = $this->c->db->lastInsertId();
+
+        $result['outboundRoute'] = $outboundRoutesResult;
+
+        if (isset($body['dialpatterns']) && count($body['dialpatterns']) > 0) {
+            foreach ($body['dialpatterns'] as $dialPattern) {
+                $duplicateDialPattern = $this->checkDuplicateDialPattern($dialPattern, $outboundRouteId);
+
+                if(!$duplicateDialPattern){
+                    $pattern = array(
+                        'route_id'              => $outboundRouteId,
+                        'match_pattern_prefix'  => (isset($dialPattern['match_pattern_prefix'])) ? $dialPattern['match_pattern_prefix'] : "",
+                        'match_pattern_pass'    => (isset($dialPattern['match_pattern_pass'])) ? $dialPattern['match_pattern_pass'] : "",
+                        'match_cid'             => (isset($dialPattern['match_cid'])) ? $dialPattern['match_cid'] : "",
+                        'prepend_digits'        => (isset($dialPattern['prepend_digits'])) ? $dialPattern['prepend_digits'] : 0,
+                    );
+
+                    $dialPatternSQL = "insert into outbound_route_patterns (route_id, match_pattern_prefix, match_pattern_pass, match_cid, prepend_digits) values (:route_id, :match_pattern_prefix, :match_pattern_pass, :match_cid, :prepend_digits)";
+                    $stmt = $this->c->db->prepare($dialPatternSQL);
+                    foreach ($pattern as $key => &$val) {
+                        $stmt->bindParam($key, $val);
+                    }
+                    $dialPatternResult = $stmt->execute();
+                    $result['dialplan_patterns'][] = $dialPatternResult;
+                    $pattern = array();
+                }
+            }
+        }
+
+        if (isset($body['trunks']) && count($body['trunks']) > 0) {
+            foreach ($body['trunks'] as $trunk) {
+                $trunkId = $this->getDestinationIdByType('trunks', $trunk['trunk']);
+                if($trunkId){
+                    $trunks[] = array(
+                        'route_id'  => $outboundRouteId,
+                        'trunk_id'  => $trunkId,
+                        'seq'       => $trunk['seq']
+                    );
+                }
+            }
+
+            if(isset($trunks) && count($trunks) > 0){
+                foreach ($trunks as $setting) {
+                    $trunksSQL = "insert into outbound_route_trunks (route_id, trunk_id, seq) values (:route_id, :trunk_id, :seq)";
+                    $stmt = $this->c->db->prepare($trunksSQL);
+                    foreach ($setting as $key => &$val) {
+                        $stmt->bindParam($key, $val);
+                    }
+                    $dialPatternResult = $stmt->execute();
+                    $result['trunks'] = $dialPatternResult;
+                }
+            }
+        }
+
+        $outboundRouteSequence = array(
+            'route_id'  => $outboundRouteId,
+            'seq'       => 0
+        );
+        $outboundRouteSequenceSQL = "insert into outbound_route_sequence (route_id, seq) values (:route_id, :seq)";
+        $stmt = $this->c->db->prepare($outboundRouteSequenceSQL);
+        foreach ($outboundRouteSequence as $key => &$val) {
+            $stmt->bindParam($key, $val);
+        }
+        $outboundRouteSequenceResult = $stmt->execute();
+        $result['outboundRouteSequence'] = $outboundRouteSequenceResult;
+
+        if($body['callrecording_enabled'] == 1){
+            $recordingValues = array('force', 'dontcare', 'yes', 'no', 'never');
+            $callRecording = array(
+                'extension'     =>  $outboundRouteId,
+                'cidnum'        =>  (isset($body['cidnum'])) ? $body['cidnum'] : '',
+                'callrecording' =>  (isset($body['callrecording']) && !in_array($body['callrecording'], $recordingValues)) ? $body['callrecording'] : 'dontcare',
+                'display'       =>  'routing'
+            );
+
+            $callRecordingSQL = "insert into callrecording_module (extension, cidnum, callrecording, display) values (:extension, :cidnum, :callrecording, :display);";
+            $stmt = $this->c->db->prepare($callRecordingSQL);
+            foreach ($callRecording as $key => &$val) {
+                $stmt->bindParam($key, $val);
+            }
+            $callRecordingResult = $stmt->execute();
+            $result['callRecording'] = $callRecordingResult;
+        }
+
+        return $response->withJson(array(
+            'code' => 200,
+            'data' => $result
+        ));
+    }
+
+    private function checkDuplicateDialPattern($dialPattern, $routeId){
+        $sql = "SELECT * FROM outbound_route_patterns where route_id = '". $routeId ."' and match_pattern_prefix = '". $dialPattern['match_pattern_prefix'] ."' and match_pattern_pass = '". $dialPattern['match_pattern_pass'] ."' and match_cid = '". $dialPattern['match_cid'] ."' and prepend_digits = '". $dialPattern['prepend_digits'] ."';";
+        $stmt = $this->c->db->query($sql);
+        $result = $stmt->fetchAll();
+
+        if(count($result) > 0){
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+
+    private function getDestinationIdByType($type, $name){
+        switch($type){
+            case 'announcement':
+                $sql = "SELECT announcement_id as id FROM announcement where description = '". $name ."';";
+                $stmt = $this->c->db->query($sql);
+                $result = $stmt->fetch();
+                return $result['id'];
+                break;
+            case 'callback':
+                $sql = "SELECT callback_id as id FROM callback where description = '". $name ."';";
+                $stmt = $this->c->db->query($sql);
+                $result = $stmt->fetch();
+                return $result['id'];
+                break;
+            case 'conference':
+                $sql = "SELECT exten as id FROM meetme where exten = '". $name ."';";
+                $stmt = $this->c->db->query($sql);
+                $result = $stmt->fetch();
+                return $result['id'];
+                break;
+            case 'extension':
+                $sql = "SELECT id as id FROM devices where id = '". $name ."';";
+                $stmt = $this->c->db->query($sql);
+                $result = $stmt->fetch();
+                return $result['id'];
+                break;
+            case 'ivr':
+                $sql = "SELECT id as id FROM ivr_details where name = '". $name ."';";
+                $stmt = $this->c->db->query($sql);
+                $result = $stmt->fetch();
+                return $result['id'];
+                break;
+            case 'queue':
+                $sql = "SELECT extension as id FROM queues_config where extension = '". $name ."';";
+                $stmt = $this->c->db->query($sql);
+                $result = $stmt->fetch();
+                return $result['id'];
+                break;
+            case 'ring_group':
+                $sql = "SELECT grpnum as id FROM ringgroups where grpnum = '". $name ."';";
+                $stmt = $this->c->db->query($sql);
+                $result = $stmt->fetch();
+                return $result['id'];
+                break;
+            case 'terminate':
+                return $name;
+                break;
+            case 'time_condition':
+                $sql = "SELECT timeconditions_id as id FROM timeconditions where displayname = '". $name ."';";
+                $stmt = $this->c->db->query($sql);
+                $result = $stmt->fetch();
+                return $result['id'];
+                break;
+            case 'time_group':
+                $sql = "SELECT id as id FROM timegroups_groups where description = '". $name ."';";
+                $stmt = $this->c->db->query($sql);
+                $result = $stmt->fetch();
+                return $result['id'];
+                break;
+            case 'trunks':
+                $sql = "SELECT trunkid as id FROM trunks where name = '". $name ."';";
+                $stmt = $this->c->db->query($sql);
+                $result = $stmt->fetch();
+                return $result['id'];
+                break;
+        }
     }
 }
