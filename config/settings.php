@@ -16,4 +16,6 @@ $settings['db']['user']   = 'habibshahid';
 $settings['db']['pass']   = 'habibshahid1221';
 $settings['db']['dbname'] = 'asterisk';
 
+$settings['sqlite']['path'] = 'C:\wamp64\www\freepbxAPI\config\astdb.sqlite3';
+
 return $settings;

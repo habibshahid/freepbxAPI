@@ -21,6 +21,14 @@ $container['db'] = function ($c) {
     return $pdo;
 };
 
+$container['sqlite'] = function ($c) {
+    $db = $c['settings']['sqlite'];
+    $pdoSQLite = new PDO("sqlite:" . $db['path']);
+    $pdoSQLite->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdoSQLite->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+    return $pdoSQLite;
+};
+
 $container['notAllowedHandler'] = function ($c) {
     return function ($request, $response) use ($c) {
         return $c['response']->withStatus(405);

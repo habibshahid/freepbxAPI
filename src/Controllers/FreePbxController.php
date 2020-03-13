@@ -4,12 +4,9 @@ namespace App\Controllers;
 
 class FreePbxController extends Controller
 {
-    public function __construct($container)
-    {
+    public function __construct($container){
         parent::__construct($container);
-        global $chan_drivers;
-        global $destinationTypes;
-        global $timezones;
+        global $chan_drivers, $destinationTypes, $timezones, $followMeStrategies;
 
         $chan_drivers = array(
             'sip' => 'chan_sip',
@@ -17,7 +14,6 @@ class FreePbxController extends Controller
             'SIP' => 'chan_sip',
             'PJSIP' => 'chan_pjsip',
         );
-
         $destinationTypes = array(
             'announcement'      =>  'app-announcement-{destination},s,1',
             'callback'          =>  'callback,{destination},1',
@@ -31,7 +27,6 @@ class FreePbxController extends Controller
             'time_condition'    =>  'timeconditions,{destination},1',
             'trunks'            =>  'ext-trunk,{destination},1'
         );
-
         $timezones = array(
             "default",
             "Africa/Abidjan",
@@ -461,8 +456,95 @@ class FreePbxController extends Controller
             "Pacific/Wallis",
             "UTC"
         );
+        $followMeStrategies = array(
+            'ringallv2',
+            'ringallv2-prim',
+            'ringall',
+            'ringall-prim',
+            'hunt',
+            'hunt-prim',
+            'memoryhunt',
+            'memoryhunt-prim',
+            'firstavailable',
+            'firstnotonphone'
+        );
     }
 
+    //Helper Functions
+    private function getDestinationIdByType($type, $name){
+        switch($type){
+            case 'announcement':
+                $sql = "SELECT announcement_id as id FROM announcement where description = '". $name ."';";
+                $stmt = $this->c->db->query($sql);
+                $result = $stmt->fetch();
+                return $result['id'];
+                break;
+            case 'callback':
+                $sql = "SELECT callback_id as id FROM callback where description = '". $name ."';";
+                $stmt = $this->c->db->query($sql);
+                $result = $stmt->fetch();
+                return $result['id'];
+                break;
+            case 'conference':
+                $sql = "SELECT exten as id FROM meetme where exten = '". $name ."';";
+                $stmt = $this->c->db->query($sql);
+                $result = $stmt->fetch();
+                return $result['id'];
+                break;
+            case 'extension':
+                $sql = "SELECT id as id FROM devices where id = '". $name ."';";
+                $stmt = $this->c->db->query($sql);
+                $result = $stmt->fetch();
+                return $result['id'];
+                break;
+            case 'ivr':
+                $sql = "SELECT id as id FROM ivr_details where name = '". $name ."';";
+                $stmt = $this->c->db->query($sql);
+                $result = $stmt->fetch();
+                return $result['id'];
+                break;
+            case 'queue':
+                $sql = "SELECT extension as id FROM queues_config where extension = '". $name ."';";
+                $stmt = $this->c->db->query($sql);
+                $result = $stmt->fetch();
+                return $result['id'];
+                break;
+            case 'ring_group':
+                $sql = "SELECT grpnum as id FROM ringgroups where grpnum = '". $name ."';";
+                $stmt = $this->c->db->query($sql);
+                $result = $stmt->fetch();
+                return $result['id'];
+                break;
+            case 'terminate':
+                return $name;
+                break;
+            case 'time_condition':
+                $sql = "SELECT timeconditions_id as id FROM timeconditions where displayname = '". $name ."';";
+                $stmt = $this->c->db->query($sql);
+                $result = $stmt->fetch();
+                return $result['id'];
+                break;
+            case 'time_group':
+                $sql = "SELECT id as id FROM timegroups_groups where description = '". $name ."';";
+                $stmt = $this->c->db->query($sql);
+                $result = $stmt->fetch();
+                return $result['id'];
+                break;
+            case 'trunks':
+                $sql = "SELECT trunkid as id FROM trunks where name = '". $name ."';";
+                $stmt = $this->c->db->query($sql);
+                $result = $stmt->fetch();
+                return $result['id'];
+                break;
+        }
+    }
+    private function getTrunkId(){
+        $sql = "SELECT trunkid FROM trunks order by trunkid desc limit 1;";
+        $stmt = $this->c->db->query($sql);
+        $trunkId = $stmt->fetch();
+
+        return $trunkId['trunkid'];
+    }
     private function matchVariables($data = '', $variable = array()){
         $customVars = $variable;
         $temp_vars = NULL;
@@ -509,18 +591,6 @@ class FreePbxController extends Controller
 
         return $variablesString;
     }
-
-    public function getAllSIPExtensions($request, $response){
-        $sql = "SELECT * FROM devices;";
-        $stmt = $this->c->db->query($sql);
-        $sipExtensions = $stmt->fetchAll();
-
-        return $response->withJson(array(
-            'code' => 200,
-            'data' => $sipExtensions
-        ));
-    }
-
     private function checkDuplicateExtension($extension)
     {
         $sql = "SELECT * FROM sip where id = '" . $extension . "';";
@@ -533,7 +603,6 @@ class FreePbxController extends Controller
             return false;
         }
     }
-
     private function checkDuplicateDevice($extension)
     {
         $sql = "SELECT * FROM devices where id = '" . $extension . "';";
@@ -546,7 +615,6 @@ class FreePbxController extends Controller
             return false;
         }
     }
-
     private function checkDuplicateFollowMe($extension)
     {
         $sql = "SELECT * FROM findmefollow where grpnum = '" . $extension . "';";
@@ -559,7 +627,6 @@ class FreePbxController extends Controller
             return false;
         }
     }
-
     private function checkDuplicateUCP($extension)
     {
         $sql = "SELECT * FROM userman_users where username = '" . $extension . "';";
@@ -572,7 +639,6 @@ class FreePbxController extends Controller
             return false;
         }
     }
-
     private function checkDuplicateUser($extension)
     {
         $sql = "SELECT * FROM users where extension = '" . $extension . "';";
@@ -585,9 +651,102 @@ class FreePbxController extends Controller
             return false;
         }
     }
+    private function checkDuplicateTrunk($name)
+    {
+        $sql = "SELECT * FROM trunks where name = '" . $name . "';";
+        $stmt = $this->c->db->query($sql);
+        $duplicate = $stmt->fetchAll();
 
+        if (count($duplicate) > 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    private function checkDuplicateInboundRouteDID($did){
+        $sql = "SELECT * FROM incoming where extension = '" . $did . "';";
+        $stmt = $this->c->db->query($sql);
+        $duplicate = $stmt->fetchAll();
+
+        if (count($duplicate) > 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    private function checkDuplicateInboundRouteName($description){
+        $sql = "SELECT * FROM incoming where description = '" . $description . "';";
+        $stmt = $this->c->db->query($sql);
+        $duplicate = $stmt->fetchAll();
+
+        if (count($duplicate) > 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    private function checkDuplicateUserContext($name){
+        $sql = "SELECT * FROM trunks where usercontext = '" . $name . "';";
+        $stmt = $this->c->db->query($sql);
+        $duplicate = $stmt->fetchAll();
+
+        if (count($duplicate) > 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    private function checkDuplicatePeerContext($name)
+    {
+        $sql = "SELECT * FROM trunks where channelid = '" . $name . "';";
+        $stmt = $this->c->db->query($sql);
+        $duplicate = $stmt->fetchAll();
+
+        if (count($duplicate) > 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    private function checkDuplicateDialPattern($dialPattern, $routeId){
+        $sql = "SELECT * FROM outbound_route_patterns where route_id = '". $routeId ."' and match_pattern_prefix = '". $dialPattern['match_pattern_prefix'] ."' and match_pattern_pass = '". $dialPattern['match_pattern_pass'] ."' and match_cid = '". $dialPattern['match_cid'] ."' and prepend_digits = '". $dialPattern['prepend_digits'] ."';";
+        $stmt = $this->c->db->query($sql);
+        $result = $stmt->fetchAll();
+
+        if(count($result) > 0){
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+    private function checkDuplicateOutboundRouteName($name){
+        $sql = "SELECT * FROM outbound_routes where name = '" . $name . "';";
+        $stmt = $this->c->db->query($sql);
+        $duplicate = $stmt->fetchAll();
+
+        if (count($duplicate) > 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+    //End Helper Functions
+
+    //Extensions
+    public function getAllSIPExtensions($request, $response){
+        $sql = "SELECT * FROM devices;";
+        $stmt = $this->c->db->query($sql);
+        $sipExtensions = $stmt->fetchAll();
+
+        return $response->withJson(array(
+            'code' => 200,
+            'data' => $sipExtensions
+        ));
+    }
     public function createSIPExtension($request, $response){
-        global $chan_drivers;
+        global $chan_drivers, $followMeStrategies, $destinationTypes;
+
         $body = $request->getParsedBody();
 
         if (!isset($body['extension']) || $body['extension'] == '') {
@@ -634,12 +793,12 @@ class FreePbxController extends Controller
         }
 
         $devices = array(
-            'id' => $body['extension'],
-            'tech' => $tech,
-            'dial' => $dial . '/' . $body['extension'],
-            'devicetype' => 'fixed',
-            'user' => $body['extension'],
-            'description' => $body['displayname'],
+            'id'            => $body['extension'],
+            'tech'          => $tech,
+            'dial'          => $dial . '/' . $body['extension'],
+            'devicetype'    => 'fixed',
+            'user'          => $body['extension'],
+            'description'   => $body['displayname'],
             'emergency_cid' => (isset($body['emergencycid'])) ? $body['emergencycid'] : '',
             'hint_override' => (isset($body['hint_override'])) ? $body['hint_override'] : null
         );
@@ -651,72 +810,291 @@ class FreePbxController extends Controller
         $devicesResult = $stmt->execute();
         $result['devices'] = $devicesResult;
 
-        $followMeStrategries = array(
-            'ringallv2',
-            'ringallv2-prim',
-            'ringall',
-            'ringall-prim',
-            'hunt',
-            'hunt-prim',
-            'memoryhunt',
-            'memoryhunt-prim',
-            'firstavailable',
-            'firstnotonphone'
+        $ampuser = array(
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/intercom/override",
+                "value" => (isset($body['other']['intercom_override']) && in_array($body['other']['intercom_override'], array('force','ring','reject'))) ? $body['other']['intercom_override'] : 'reject'
+            ),
+            array(
+                "key"   => "/AMPUSER/100/pinless",
+                "value" => (isset($body['pinsets']['enabled']) && $body['pinsets']['enabled'] == 1) ? 'NOPASSWS' : ''
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/cwtone",
+                "value" => (isset($body['advanced']['callwaiting_tone']) && $body['advanced']['callwaiting_tone'] == 1) ? 'enabled' : 'disabled'
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/ringtimer",
+                "value" => (isset($body['advanced']['ringtimer'])) ? $body['advanced']['ringtimer'] : '0'
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/cfringtimer",
+                "value" => (isset($body['advanced']['cfringtimer'])) ? $body['advanced']['cfringtimer'] : '0'
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/concurrency_limit",
+                "value" => (isset($body['advanced']['concurrency_limit'])) ? $body['advanced']['concurrency_limit'] : '2'
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/cidname",
+                "value" => $body['displayname']
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/cidnum",
+                "value" =>  $body['extension']
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/answermode",
+                "value" => (isset($body['advanced']['answermode']) && $body['advanced']['answermode'] == 1) ? 'intercom' : 'disabled'
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/intercom",
+                "value" => (isset($body['advanced']['intercom']) && $body['advanced']['intercom'] == 1) ? 'enabled' : 'disabled'
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/recording/in/external",
+                "value" => (isset($body['advanced']['recording_in_external']) && in_array($body['advanced']['recording_in_external'], array('dontcare','force','yes','no','never'))) ? $body['advanced']['recording_in_external'] : 'dontcare'
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/recording/out/external",
+                "value" => (isset($body['advanced']['recording_out_external']) && in_array($body['advanced']['recording_out_external'], array('dontcare','force','yes','no','never'))) ? $body['advanced']['recording_out_external'] : 'dontcare'
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/recording/in/internal",
+                "value" => (isset($body['advanced']['recording_in_internal']) && in_array($body['advanced']['recording_in_internal'], array('dontcare','force','yes','no','never'))) ? $body['advanced']['recording_in_internal'] : 'dontcare'
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/recording/out/internal",
+                "value" => (isset($body['advanced']['recording_out_internal']) && in_array($body['advanced']['recording_out_internal'], array('dontcare','force','yes','no','never'))) ? $body['advanced']['recording_out_internal'] : 'dontcare'
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/recording/ondemand",
+                "value" => (isset($body['advanced']['recording_ondemand']) && in_array($body['advanced']['recording_ondemand'], array('enabled','disabled','override'))) ? $body['advanced']['recording_out_internal'] : 'disabled'
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/recording/priority",
+                "value" => (isset($body['advanced']['recording_priority']) && $body['advanced']['recording_priority'] == 1) ? $body['advanced']['recording_priority'] : '10'
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/dictate/enabled",
+                "value" => (isset($body['advanced']['dictate_enabled']) && $body['advanced']['dictate_enabled'] == 1) ? "enabled" : "disabled"
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/dictate/format",
+                "value" => (isset($body['advanced']['dictate_format']) && in_array($body['advanced']['dictate_format'], array('ogg','gsm','wav'))) ? $body['advanced']['dictate_format'] : "ogg"
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/dictate/from",
+                "value" => "ZGljdGF0ZUBmcmVlcGJ4Lm9yZw=="
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/dictate/email",
+                "value" => (isset($body['advanced']['dictate_email']) && $body['advanced']['dictate_email'] == 1) ? $body['advanced']['dictate_email'] : ""
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/queues/qnostate",
+                "value" => "usestate"
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/voicemail",
+                "value" => (isset($body['voicemail']['enabled']) && $body['voicemail']['enabled'] == 1) ? "default" : "novm"
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/hint",
+                "value" => "SIP/".$body['extension']."&Custom =>DND".$body['extension'].",CustomPresence =>".$body['extension']
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/rvolume",
+                "value" => ""
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/password",
+                "value" => ""
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/noanswer",
+                "value" => ""
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/recording",
+                "value" => ""
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/outboundcid",
+                "value" => (isset($body['outboundcid'])) ? $body['outboundcid'] : ''
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/emergency_cid",
+                "value" => (isset($body['emergencycid'])) ? $body['emergencycid'] : ''
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/device",
+                "value" => $body['extension']
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/followme/strategy",
+                "value" => (isset($body['followme']['followmestrategy']) && in_array($body['followme']['followmestrategy'], $followMeStrategies)) ? $body['followme']['followmestrategy'] : 'ringallv2-prim',
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/followme/prering",
+                "value" => (isset($body['followme']['pre_ring'])) ? $body['followme']['pre_ring'] : 7,
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/followme/grptime",
+                "value" => (isset($body['followme']['grptime'])) ? $body['followme']['grptime'] : '20',
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/followme/grplist",
+                "value" => (isset($body['followme']['grplist']) && count($body['followme']['grplist']) > 0) ? implode('-', $body['followme']['grplist']) : $body['extension'],
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/followme/annmsg",
+                "value" => (isset($body['followme']['announcement_message'])) ? $this->getDestinationIdByType('announcement', $body['followme']['announcement_message']) : "",
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/followme/remotealertmsg",
+                "value" => (isset($body['followme']['remote_announce'])) ? $this->getDestinationIdByType('announcement', $body['followme']['remote_announce']) : "",
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/followme/toolatemsg",
+                "value" => (isset($body['followme']['too_late_announce'])) ? $this->getDestinationIdByType('announcement', $body['followme']['too_late_announce']) : "",
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/followme/postdest",
+                "value" => (isset($body['followme']['post_destination'])) ? $this->matchVariables($destinationTypes[$body['followme']['post_destination_type']], array('destination' => $this->getDestinationIdByType($body['followme']['post_destination_type'], $body['followme']['post_destination']))) : "",
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/followme/ringing",
+                "value" => (isset($body['followme']['ringing'])) ? $body['followme']['ringing'] : 'Ring',
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/followme/grpconf",
+                "value" => "ENABLED"
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/followme/ddial",
+                "value" => (isset($body['followme']['enabled']) && $body['followme']['enabled'] == 1) ? "DIRECT" : 'EXTENSION',
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/followme/changecid",
+                "value" => (isset($body['followme']['changecid']) && in_array($body['followme']['changecid'], array('default','fixed','extern','did','forcedid'))) ? $body['followme']['changecid'] : 'default',
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/followme/fixedcid",
+                "value" => (isset($body['followme']['fixedcid']) && ($body['followme']['changecid'] == "default" || $body['followme']['changecid'] == '')) ? "" : $body['followme']['fixedcid'],
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/language",
+                "value" => ""
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/followme/grppre",
+                "value" => (isset($body['followme']['grppre'])) ? $body['followme']['grppre'] : '',
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/followme/dring",
+                "value" => (isset($body['followme']['dring'])) ? $body['followme']['dring'] : '',
+            ),
+            array(
+                "key" => "/AMPUSER/". $body['extension'] ."/followme/rvolume",
+                "value" => (isset($body['followme']['rvolume'])) ? $body['followme']['rvolume'] : '',
+            ),
+            array(
+                "key" => "/DEVICE/".$body['extension']."/user",
+                "value" => $body['extension']
+            ),
+            array(
+                "key" => "/DEVICE/".$body['extension']."/tech",
+                "value" => $tech
+            ),
+            array(
+                "key" => "/DEVICE/100/dial",
+                "value" => $dial
+            ),
+            array(
+                "key" => "/DEVICE/".$body['extension']."/type",
+                "value" => "fixed"
+            ),
+            array(
+                "key" => "/DEVICE/".$body['extension']."/default_user",
+                "value" => $body['extension']
+            ),
+            array(
+                "key" => "/CW/".$body['extension'],
+                "value" => (isset($body['advanced']['callwaiting_enabled']) && $body['advanced']['callwaiting_enabled'] == 1) ? 'ENABLED' : 'DISABLED'
+            ),
         );
-
-        $findmefollow = array(
-            'grpnum' => $body['extension'],
-            'strategy' => (isset($body['followmestrategy'])) ? $body['followmestrategy'] : 'ringallv2-prim',
-            'grptime' => (isset($body['grptime'])) ? $body['grptime'] : '20',
-            'grppre' => (isset($body['grppre'])) ? $body['grppre'] : '',
-            'grplist' => $body['extension'],
-            'annmsg_id' => (isset($body['annmsg_id'])) ? $body['annmsg_id'] : null,
-            'postdest' => 'ext-local,' . $body['extension'] . ',dest',
-            'dring' => (isset($body['dring'])) ? $body['dring'] : '',
-            'rvolume' => (isset($body['rvolume'])) ? $body['rvolume'] : '',
-            'remotealert_id' => (isset($body['remotealert_id'])) ? $body['remotealert_id'] : null,
-            'needsconf' => (isset($body['needsconf'])) ? $body['needsconf'] : '',
-            'toolate_id' => (isset($body['toolate_id'])) ? $body['toolate_id'] : null,
-            'pre_ring' => (isset($body['pre_ring'])) ? $body['pre_ring'] : 7,
-            'ringing' => (isset($body['ringing'])) ? $body['ringing'] : 'Ring',
-            'calendar_enable' => (isset($body['calendar_enable'])) ? $body['calendar_enable'] : '',
-            'calendar_id' => (isset($body['calendar_id'])) ? $body['calendar_id'] : '',
-            'calendar_group_id' => (isset($body['calendar_group_id'])) ? $body['calendar_group_id'] : '',
-            'calendar_match' => (isset($body['calendar_match'])) ? $body['calendar_match'] : 'yes',
-        );
-
-        if (!$duplicate['followme']) {
-            $sql = "insert into findmefollow (grpnum, strategy, grptime, grppre, grplist, annmsg_id, postdest, dring, rvolume, remotealert_id, needsconf, toolate_id, pre_ring, ringing, calendar_enable, calendar_id, calendar_group_id, calendar_match) values (:grpnum, :strategy, :grptime, :grppre, :grplist, :annmsg_id, :postdest, :dring, :rvolume, :remotealert_id, :needsconf, :toolate_id, :pre_ring, :ringing, :calendar_enable, :calendar_id, :calendar_group_id, :calendar_match)";
-            $stmt = $this->c->db->prepare($sql);
-            foreach ($findmefollow as $key => &$val) {
-                $stmt->bindParam($key, $val);
+        foreach ($ampuser as $setting) {
+            try {
+                $astDBSQL = "insert into astdb (key, value) values (:key, :value)";
+                $stmt = $this->c->sqlite->prepare($astDBSQL);
+                foreach ($setting as $key => &$val) {
+                    $stmt->bindParam($key, $val);
+                }
+                $astDBResult = $stmt->execute();
+                $result['astdb'] = $astDBResult;
+            } catch (PDOException $e) {
+                $result['astdb'] = $e->getMessage();
+            } catch (Exception $e) {
+                $result['astdb'] = $e->getMessage();
             }
-            $findmefollowResult = $stmt->execute();
-            $result['findmefollow'] = $findmefollowResult;
-        } else {
-            $result['findmefollow'] = 'Cannot create Follow Me for Extension ' . $body['extension'] . '. Configuration already exists.';
+        }
+
+        if($body['followme']['enabled'] == "1"){
+            $findmefollow = array(
+                'grpnum'            =>  $body['extension'],
+                'strategy'          =>  (isset($body['followme']['followmestrategy']) && in_array($body['followme']['followmestrategy'], $followMeStrategies)) ? $body['followme']['followmestrategy'] : 'ringallv2-prim',
+                'grptime'           =>  (isset($body['followme']['grptime'])) ? $body['followme']['grptime'] : '20',
+                'grppre'            =>  (isset($body['followme']['grppre'])) ? $body['followme']['grppre'] : '',
+                'grplist'           =>  (isset($body['followme']['grplist']) && count($body['followme']['grplist']) > 0) ? implode('-', $body['followme']['grplist']) : $body['extension'],
+                'annmsg_id'         =>  (isset($body['followme']['announcement_message'])) ? $this->getDestinationIdByType('announcement', $body['followme']['announcement_message']) : null,
+                'postdest'          =>  (isset($body['followme']['post_destination'])) ? $this->matchVariables($destinationTypes[$body['followme']['post_destination_type']], array('destination' => $this->getDestinationIdByType($body['followme']['post_destination_type'], $body['followme']['post_destination']))) : null,
+                'dring'             =>  (isset($body['followme']['dring'])) ? $body['followme']['dring'] : '',
+                'rvolume'           =>  (isset($body['followme']['rvolume'])) ? $body['followme']['rvolume'] : '',
+                'remotealert_id'    =>  (isset($body['followme']['remote_announce'])) ? $this->getDestinationIdByType('announcement', $body['followme']['remote_announce']) : null,
+                'needsconf'         =>  (isset($body['followme']['needsconf']) && $body['followme']['needsconf'] == 1) ? 'CHECKED' : '',
+                'toolate_id'        =>  (isset($body['followme']['too_late_announce'])) ? $this->getDestinationIdByType('announcement', $body['followme']['too_late_announce']) : null,
+                'pre_ring'          =>  (isset($body['followme']['pre_ring'])) ? $body['followme']['pre_ring'] : 7,
+                'ringing'           =>  (isset($body['followme']['ringing'])) ? $body['followme']['ringing'] : 'Ring',
+                'calendar_enable'   =>  (isset($body['followme']['calendar_enable'])) ? $body['followme']['calendar_enable'] : '',
+                'calendar_id'       =>  (isset($body['followme']['calendar_id'])) ? $body['followme']['calendar_id'] : '',
+                'calendar_group_id' =>  (isset($body['followme']['calendar_group_id'])) ? $body['followme']['calendar_group_id'] : '',
+                'calendar_match'    =>  (isset($body['followme']['calendar_match'])) ? $body['followme']['calendar_match'] : 'yes',
+            );
+
+            if (!$duplicate['followme']) {
+                $sql = "insert into findmefollow (grpnum, strategy, grptime, grppre, grplist, annmsg_id, postdest, dring, rvolume, remotealert_id, needsconf, toolate_id, pre_ring, ringing, calendar_enable, calendar_id, calendar_group_id, calendar_match) values (:grpnum, :strategy, :grptime, :grppre, :grplist, :annmsg_id, :postdest, :dring, :rvolume, :remotealert_id, :needsconf, :toolate_id, :pre_ring, :ringing, :calendar_enable, :calendar_id, :calendar_group_id, :calendar_match)";
+                $stmt = $this->c->db->prepare($sql);
+                foreach ($findmefollow as $key => &$val) {
+                    $stmt->bindParam($key, $val);
+                }
+                $findmefollowResult = $stmt->execute();
+                $result['findmefollow'] = $findmefollowResult;
+            } else {
+                $result['findmefollow'] = 'Cannot create Follow Me for Extension ' . $body['extension'] . '. Configuration already exists.';
+            }
         }
 
         if (isset($body['incomingdid']) && $body['incomingdid'] != '') {
             $duplicate['incoming'] = $this->checkDuplicateInboundRouteDID($body['incomingdid']);
             $incoming = array(
-                'cidnum' => (isset($body['cidnum'])) ? $body['cidnum'] : '',
-                'extension' => $body['incomingdid'],
-                'destination' => 'from-did,' . $body['extension'] . ',1',
-                'privacyman' => 0,
-                'alertinfo' => (isset($body['alertinfo'])) ? $body['alertinfo'] : '',
-                'ringing' => (isset($body['ringing'])) ? $body['ringing'] : '',
-                'fanswer' => (isset($body['fanswer'])) ? $body['fanswer'] : '',
-                'mohclass' => (isset($body['mohclass'])) ? $body['mohclass'] : 'default',
-                'description' => $body['incomingdid'],
-                'grppre' => (isset($body['grppre'])) ? $body['grppre'] : '',
-                'delay_answer' => (isset($body['delay_answer'])) ? $body['delay_answer'] : 0,
-                'pricid' => (isset($body['pricid'])) ? $body['pricid'] : '',
-                'pmmaxretries' => (isset($body['pmmaxretries'])) ? $body['pmmaxretries'] : '',
-                'pmminlength' => (isset($body['pmminlength'])) ? $body['pmminlength'] : '',
-                'reversal' => (isset($body['reversal'])) ? $body['reversal'] : '',
-                'rvolume' => (isset($body['rvolume'])) ? $body['rvolume'] : '',
-                'indication_zone' => (isset($body['indication_zone'])) ? $body['indication_zone'] : 'default'
+                'cidnum'            =>  (isset($body['cidnum'])) ? $body['cidnum'] : '',
+                'extension'         =>  $body['incomingdid'],
+                'destination'       =>  'from-did,' . $body['extension'] . ',1',
+                'privacyman'        =>  0,
+                'alertinfo'         =>  (isset($body['alertinfo'])) ? $body['alertinfo'] : '',
+                'ringing'           =>  (isset($body['ringing'])) ? $body['ringing'] : '',
+                'fanswer'           =>  (isset($body['fanswer'])) ? $body['fanswer'] : '',
+                'mohclass'          =>  (isset($body['mohclass'])) ? $body['mohclass'] : 'default',
+                'description'       =>  $body['incomingdid'],
+                'grppre'            =>  (isset($body['grppre'])) ? $body['grppre'] : '',
+                'delay_answer'      =>  (isset($body['delay_answer'])) ? $body['delay_answer'] : 0,
+                'pricid'            =>  (isset($body['pricid'])) ? $body['pricid'] : '',
+                'pmmaxretries'      =>  (isset($body['pmmaxretries'])) ? $body['pmmaxretries'] : '',
+                'pmminlength'       =>  (isset($body['pmminlength'])) ? $body['pmminlength'] : '',
+                'reversal'          =>  (isset($body['reversal'])) ? $body['reversal'] : '',
+                'rvolume'           =>  (isset($body['rvolume'])) ? $body['rvolume'] : '',
+                'indication_zone'   =>  (isset($body['indication_zone'])) ? $body['indication_zone'] : 'default'
             );
 
             if (!$duplicate['incoming']) {
@@ -1251,30 +1629,30 @@ class FreePbxController extends Controller
 
         if (isset($body['create_user']) && $body['create_user'] == "1") {
             $userman_users = array(
-                'auth' => (isset($body['auth'])) ? $body['auth'] : 1,
-                'authid' => (isset($body['authid'])) ? $body['authid'] : null,
-                'username' => $body['extension'],
-                'description' => 'Autogenerated user on new device creation',
-                'password' => '$2a$08$QR/ZjchVw4Mgsyoz4okE9ulZxAWhpeKsvQwuWLoH7e70GIkZQ4jUC', //Todo check freepbx password encryption
-                'default_extension' => $body['extension'],
-                'primary_group' => (isset($body['primary_group'])) ? $body['primary_group'] : null,
-                'permissions' => (isset($body['permissions'])) ? $body['permissions'] : null,
-                'fname' => (isset($body['fname'])) ? $body['fname'] : null,
-                'lname' => (isset($body['lname'])) ? $body['lname'] : null,
-                'displayname' => $body['displayname'],
-                'title' => (isset($body['lname'])) ? $body['lname'] : null,
-                'company' => (isset($body['company'])) ? $body['company'] : null,
-                'department' => (isset($body['department'])) ? $body['department'] : null,
-                'language' => (isset($body['language'])) ? $body['language'] : null,
-                'timezone' => (isset($body['timezone'])) ? $body['timezone'] : null,
-                'dateformat' => (isset($body['dateformat'])) ? $body['dateformat'] : null,
-                'timeformat' => (isset($body['timeformat'])) ? $body['timeformat'] : null,
-                'datetimeformat' => (isset($body['datetimeformat'])) ? $body['datetimeformat'] : null,
-                'email' => (isset($body['email'])) ? $body['email'] : null,
-                'cell' => (isset($body['cell'])) ? $body['cell'] : null,
-                'work' => (isset($body['work'])) ? $body['work'] : null,
-                'home' => (isset($body['home'])) ? $body['home'] : null,
-                'fax' => (isset($body['fax'])) ? $body['fax'] : null,
+                'auth'              =>  (isset($body['auth'])) ? $body['auth'] : 1,
+                'authid'            =>  (isset($body['authid'])) ? $body['authid'] : null,
+                'username'          =>  $body['extension'],
+                'description'       =>  'Autogenerated user on new device creation via API',
+                'password'          =>  '$2a$08$QR/ZjchVw4Mgsyoz4okE9ulZxAWhpeKsvQwuWLoH7e70GIkZQ4jUC', //Todo check freepbx password encryption
+                'default_extension' =>  $body['extension'],
+                'primary_group'     =>  (isset($body['primary_group'])) ? $body['primary_group'] : null,
+                'permissions'       =>  (isset($body['permissions'])) ? $body['permissions'] : null,
+                'fname'             =>  (isset($body['fname'])) ? $body['fname'] : null,
+                'lname'             =>  (isset($body['lname'])) ? $body['lname'] : null,
+                'displayname'       =>  $body['displayname'],
+                'title'             =>  (isset($body['lname'])) ? $body['lname'] : null,
+                'company'           =>  (isset($body['company'])) ? $body['company'] : null,
+                'department'        =>  (isset($body['department'])) ? $body['department'] : null,
+                'language'          =>  (isset($body['language'])) ? $body['language'] : null,
+                'timezone'          =>  (isset($body['timezone'])) ? $body['timezone'] : null,
+                'dateformat'        =>  (isset($body['dateformat'])) ? $body['dateformat'] : null,
+                'timeformat'        =>  (isset($body['timeformat'])) ? $body['timeformat'] : null,
+                'datetimeformat'    =>  (isset($body['datetimeformat'])) ? $body['datetimeformat'] : null,
+                'email'             =>  (isset($body['email'])) ? $body['email'] : null,
+                'cell'              =>  (isset($body['cell'])) ? $body['cell'] : null,
+                'work'              =>  (isset($body['work'])) ? $body['work'] : null,
+                'home'              =>  (isset($body['home'])) ? $body['home'] : null,
+                'fax'               =>  (isset($body['fax'])) ? $body['fax'] : null,
             );
 
             if (!$duplicate['ucp']) {
@@ -1291,22 +1669,22 @@ class FreePbxController extends Controller
         }
 
         $users = array(
-            'extension' => $body['extension'],
-            'password' => '',
-            'name' => $body['displayname'],
-            'voicemail' => (isset($body['voicemail'])) ? $body['voicemail'] : 'novm',
-            'ringtimer' => (isset($body['ringtimer'])) ? $body['ringtimer'] : 0,
-            'noanswer' => (isset($body['noanswer'])) ? $body['noanswer'] : '',
-            'recording' => (isset($body['recording'])) ? $body['recording'] : '',
-            'outboundcid' => (isset($body['outboundcid'])) ? $body['outboundcid'] : '',
-            'sipname' => (isset($body['sipname'])) ? $body['sipname'] : '',
-            'noanswer_cid' => (isset($body['noanswer_cid'])) ? $body['noanswer_cid'] : '',
-            'busy_cid' => (isset($body['busy_cid'])) ? $body['busy_cid'] : '',
-            'chanunavail_cid' => (isset($body['chanunavail_cid'])) ? $body['chanunavail_cid'] : '',
-            'noanswer_dest' => (isset($body['noanswer_dest'])) ? $body['noanswer_dest'] : '',
-            'busy_dest' => (isset($body['busy_dest'])) ? $body['busy_dest'] : '',
-            'chanunavail_dest' => (isset($body['chanunavail_dest'])) ? $body['chanunavail_dest'] : '',
-            'mohclass' => (isset($body['mohclass'])) ? $body['mohclass'] : 'default',
+            'extension'         =>  $body['extension'],
+            'password'          =>  '',
+            'name'              =>  $body['displayname'],
+            'voicemail'         =>  (isset($body['voicemail']['enabled']) && $body['voicemail']['enabled'] == "1") ? "default" : 'novm',
+            'ringtimer'         =>  (isset($body['ringtimer'])) ? $body['ringtimer'] : 0,
+            'noanswer'          =>  (isset($body['noanswer'])) ? $body['noanswer'] : '',
+            'recording'         =>  (isset($body['recording'])) ? $body['recording'] : '',
+            'outboundcid'       =>  (isset($body['outboundcid'])) ? $body['outboundcid'] : '',
+            'sipname'           =>  (isset($body['sipname'])) ? $body['sipname'] : '',
+            'noanswer_cid'      =>  (isset($body['noanswer_cid'])) ? $body['noanswer_cid'] : '',
+            'busy_cid'          =>  (isset($body['busy_cid'])) ? $body['busy_cid'] : '',
+            'chanunavail_cid'   =>  (isset($body['chanunavail_cid'])) ? $body['chanunavail_cid'] : '',
+            'noanswer_dest'     =>  (isset($body['noanswer_dest'])) ? $body['noanswer_dest'] : '',
+            'busy_dest'         =>  (isset($body['busy_dest'])) ? $body['busy_dest'] : '',
+            'chanunavail_dest'  =>  (isset($body['chanunavail_dest'])) ? $body['chanunavail_dest'] : '',
+            'mohclass'          =>  (isset($body['mohclass'])) ? $body['mohclass'] : 'default',
         );
 
         if (!$duplicate['user']) {
@@ -1326,77 +1704,9 @@ class FreePbxController extends Controller
             'data' => array('extension' => $body['extension'], 'result' => $result)
         ));
     }
+    //End Extensions
 
-    private function getTrunkId(){
-        $sql = "SELECT trunkid FROM trunks order by trunkid desc limit 1;";
-        $stmt = $this->c->db->query($sql);
-        $trunkId = $stmt->fetch();
-
-        return $trunkId['trunkid'];
-    }
-
-    private function checkDuplicateTrunk($name)
-    {
-        $sql = "SELECT * FROM trunks where name = '" . $name . "';";
-        $stmt = $this->c->db->query($sql);
-        $duplicate = $stmt->fetchAll();
-
-        if (count($duplicate) > 0) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private function checkDuplicateInboundRouteDID($did){
-        $sql = "SELECT * FROM incoming where extension = '" . $did . "';";
-        $stmt = $this->c->db->query($sql);
-        $duplicate = $stmt->fetchAll();
-
-        if (count($duplicate) > 0) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private function checkDuplicateInboundRouteName($description){
-        $sql = "SELECT * FROM incoming where description = '" . $description . "';";
-        $stmt = $this->c->db->query($sql);
-        $duplicate = $stmt->fetchAll();
-
-        if (count($duplicate) > 0) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private function checkDuplicateUserContext($name){
-        $sql = "SELECT * FROM trunks where usercontext = '" . $name . "';";
-        $stmt = $this->c->db->query($sql);
-        $duplicate = $stmt->fetchAll();
-
-        if (count($duplicate) > 0) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private function checkDuplicatePeerContext($name)
-    {
-        $sql = "SELECT * FROM trunks where channelid = '" . $name . "';";
-        $stmt = $this->c->db->query($sql);
-        $duplicate = $stmt->fetchAll();
-
-        if (count($duplicate) > 0) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
+    //Trunks
     public function getAllSIPTrunks($request, $response){
         $sql = "SELECT * FROM trunks;";
         $stmt = $this->c->db->query($sql);
@@ -1407,7 +1717,6 @@ class FreePbxController extends Controller
             'data' => $sipExtensions
         ));
     }
-
     public function createSIPTrunk($request, $response){
         global $chan_drivers;
         $body = $request->getParsedBody();
@@ -1641,7 +1950,6 @@ class FreePbxController extends Controller
             'data' => array('trunk' => $body['trunk']['name'], 'result' => $result)
         ));
     }
-
     public function updateSIPTrunk($request, $response, $args){
         global $chan_drivers;
         $body = $request->getParsedBody();
@@ -1651,6 +1959,7 @@ class FreePbxController extends Controller
             'data' => array('trunk' => $body['trunk']['name'], 'result' => $args)
         ));
     }
+    //End Trunks
 
     //Inbound Routes
     public function getAllInboundRoutes($request, $response){
@@ -1663,7 +1972,6 @@ class FreePbxController extends Controller
             'data' => $inboundRoutes
         ));
     }
-
     public function createInboundRoute($request, $response){
         global $destinationTypes;
         $body = $request->getParsedBody();
@@ -1812,20 +2120,9 @@ class FreePbxController extends Controller
             'data' => $result
         ));
     }
+    //End Inbound Routes
 
     //Outbound Routes
-    private function checkDuplicateOutboundRouteName($name){
-        $sql = "SELECT * FROM outbound_routes where name = '" . $name . "';";
-        $stmt = $this->c->db->query($sql);
-        $duplicate = $stmt->fetchAll();
-
-        if (count($duplicate) > 0) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     public function getAllOutboundRoutes($request, $response){
         $sql = "SELECT * FROM outbound_routes;";
         $stmt = $this->c->db->query($sql);
@@ -1836,7 +2133,6 @@ class FreePbxController extends Controller
             'data' => $outboundRoutes
         ));
     }
-
     public function createOutboundRoute($request, $response){
         global $destinationTypes, $timezones;
         $body = $request->getParsedBody();
@@ -2007,85 +2303,19 @@ class FreePbxController extends Controller
             'data' => $result
         ));
     }
+    //End Outbound Routes
 
-    private function checkDuplicateDialPattern($dialPattern, $routeId){
-        $sql = "SELECT * FROM outbound_route_patterns where route_id = '". $routeId ."' and match_pattern_prefix = '". $dialPattern['match_pattern_prefix'] ."' and match_pattern_pass = '". $dialPattern['match_pattern_pass'] ."' and match_cid = '". $dialPattern['match_cid'] ."' and prepend_digits = '". $dialPattern['prepend_digits'] ."';";
-        $stmt = $this->c->db->query($sql);
-        $result = $stmt->fetchAll();
 
-        if(count($result) > 0){
-            return true;
-        }
-        else{
-            return false;
-        }
+    public function checkSQLite($request, $response){
+        $body = $request->getParsedBody();
+        $sql = "SELECT * FROM astdb where key like '%/100%';";
+        $stmt = $this->c->sqlite->query($sql);
+        $inboundRoutes = $stmt->fetchAll();
+
+        return $response->withJson(array(
+            'code' => 200,
+            'data' => $inboundRoutes
+        ));
     }
 
-    private function getDestinationIdByType($type, $name){
-        switch($type){
-            case 'announcement':
-                $sql = "SELECT announcement_id as id FROM announcement where description = '". $name ."';";
-                $stmt = $this->c->db->query($sql);
-                $result = $stmt->fetch();
-                return $result['id'];
-                break;
-            case 'callback':
-                $sql = "SELECT callback_id as id FROM callback where description = '". $name ."';";
-                $stmt = $this->c->db->query($sql);
-                $result = $stmt->fetch();
-                return $result['id'];
-                break;
-            case 'conference':
-                $sql = "SELECT exten as id FROM meetme where exten = '". $name ."';";
-                $stmt = $this->c->db->query($sql);
-                $result = $stmt->fetch();
-                return $result['id'];
-                break;
-            case 'extension':
-                $sql = "SELECT id as id FROM devices where id = '". $name ."';";
-                $stmt = $this->c->db->query($sql);
-                $result = $stmt->fetch();
-                return $result['id'];
-                break;
-            case 'ivr':
-                $sql = "SELECT id as id FROM ivr_details where name = '". $name ."';";
-                $stmt = $this->c->db->query($sql);
-                $result = $stmt->fetch();
-                return $result['id'];
-                break;
-            case 'queue':
-                $sql = "SELECT extension as id FROM queues_config where extension = '". $name ."';";
-                $stmt = $this->c->db->query($sql);
-                $result = $stmt->fetch();
-                return $result['id'];
-                break;
-            case 'ring_group':
-                $sql = "SELECT grpnum as id FROM ringgroups where grpnum = '". $name ."';";
-                $stmt = $this->c->db->query($sql);
-                $result = $stmt->fetch();
-                return $result['id'];
-                break;
-            case 'terminate':
-                return $name;
-                break;
-            case 'time_condition':
-                $sql = "SELECT timeconditions_id as id FROM timeconditions where displayname = '". $name ."';";
-                $stmt = $this->c->db->query($sql);
-                $result = $stmt->fetch();
-                return $result['id'];
-                break;
-            case 'time_group':
-                $sql = "SELECT id as id FROM timegroups_groups where description = '". $name ."';";
-                $stmt = $this->c->db->query($sql);
-                $result = $stmt->fetch();
-                return $result['id'];
-                break;
-            case 'trunks':
-                $sql = "SELECT trunkid as id FROM trunks where name = '". $name ."';";
-                $stmt = $this->c->db->query($sql);
-                $result = $stmt->fetch();
-                return $result['id'];
-                break;
-        }
-    }
 }

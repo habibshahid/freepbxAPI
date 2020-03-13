@@ -36,3 +36,6 @@ $app->get('/api/v1/outboundRoutes', 'FreePbxController:getAllOutboundRoutes');
 $app->post('/api/v1/outboundRoute', 'FreePbxController:createOutboundRoute');
 $app->put('/api/v1/outboundRoute/{id}', 'FreePbxController:updateOutboundRoute'); //todo
 $app->delete('/api/v1/outboundRoute/{id}', 'FreePbxController:deleteOutboundRoute'); //todo
+
+
+$app->get('/api/v1/checkSQLite', 'FreePbxController:checkSQLite');
