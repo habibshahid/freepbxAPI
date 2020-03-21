@@ -15,10 +15,10 @@ $ composer install
 ## Endpoints
 ### api/v1
 **Check if user is logged in, if so returns username and token**  
-GET: http://localhost/freepbxAPI/api/v1  
+GET: http://localhost/freepbxAPI/auth
 
 **Attempt to login, currently simply checks if username is drum**  
-POST: http://localhost/freepbxAPI/api/v1
+POST: http://localhost/freepbxAPI/auth
 ```json
 {
   "username": "drum",
@@ -27,7 +27,7 @@ POST: http://localhost/freepbxAPI/api/v1
 ```
 
 **Logout**  
-DELETE: http://localhost/freepbxAPI/api/v1
+DELETE: http://localhost/freepbxAPI/auth
 
 ### SIP Extensions (Requires auth)
 GET: http://localhost/freepbxAPI/api/v1/sipExtensions

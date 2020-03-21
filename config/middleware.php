@@ -1,7 +1,7 @@
 <?php
 // auth middleware
 $app->add(function ($request, $response, callable $next) {
-    $skip = ["", "api"];
+    $skip = ["", "auth"];
 
     $path = $request->getUri()->getPath();
     $base = explode("/", $path, 2)[0];

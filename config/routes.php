@@ -9,9 +9,9 @@ $app->options('/{routes:.+}', function ($request, $response, $args) {
 $app->get('/', 'HomeController:landing');
 
 //Login Auth
-$app->post('/api/v1', 'ApiController:login');
-$app->get('/api/v1', 'ApiController:check');
-$app->delete('/api/v1', 'ApiController:logout');
+$app->post('/auth', 'ApiController:login');
+$app->get('/auth', 'ApiController:check');
+$app->delete('/auth', 'ApiController:logout');
 
 //SIP Extensions
 $app->get('/api/v1/sipExtensions', 'FreePbxController:getAllSIPExtensions');
