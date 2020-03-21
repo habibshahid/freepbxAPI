@@ -6,7 +6,7 @@ class FreePbxController extends Controller
 {
     public function __construct($container){
         parent::__construct($container);
-        global $chan_drivers, $destinationTypes, $timezones, $followMeStrategies;
+        global $chan_drivers, $destinationTypes, $timezones, $followMeStrategies, $fwconsoleCommands;
 
         $chan_drivers = array(
             'sip' => 'chan_sip',
@@ -26,7 +26,7 @@ class FreePbxController extends Controller
             'terminate'         =>  'app-blackhole,{destination},1',
             'time_condition'    =>  'timeconditions,{destination},1',
             'trunks'            =>  'ext-trunk,{destination},1',
-            'trunks'            =>  'play-system-recording,{destination},1',
+            'playback'          =>  'play-system-recording,{destination},1',
         );
         $timezones = array(
             "default",
@@ -469,6 +469,7 @@ class FreePbxController extends Controller
             'firstavailable',
             'firstnotonphone'
         );
+        $fwconsoleCommands = array('restart', 'start', 'stop', 'status', 'reload');
     }
 
     //Helper Functions
@@ -844,7 +845,6 @@ class FreePbxController extends Controller
         $extension = $stmt->fetch();
         return $extension;
     }
-
     //End Helper Functions
 
     //Extensions
@@ -1831,22 +1831,10 @@ class FreePbxController extends Controller
                 'data' => 'Extension not defined.'
             ));
         }
-        elseif (!isset($body['displayname']) || $body['displayname'] == '') {
-            return $response->withJson(array(
-                'code' => 501,
-                'data' => 'Display Name not defined.'
-            ));
-        }
-        elseif (!isset($body['devicetype']) || ($body['devicetype'] == '' || !array_key_exists($body['devicetype'], $chan_drivers))) {
+        elseif (isset($body['devicetype']) && !array_key_exists($body['devicetype'], $chan_drivers)) {
             return $response->withJson(array(
                 'code' => 501,
                 'data' => 'Device Type not defined. Possible Types (SIP/PJSIP)'
-            ));
-        }
-        elseif (!isset($body['secret']) || $body['secret'] == '') {
-            return $response->withJson(array(
-                'code' => 501,
-                'data' => 'Secret not defined.'
             ));
         }
 
@@ -3097,7 +3085,7 @@ class FreePbxController extends Controller
                 'data' => 'Invalid Trunk Name. Trunk not found'
             ));
         }
-        elseif (!isset($body['trunk']['tech']) || $body['trunk']['tech'] == '' || !array_key_exists($body['trunk']['tech'], $chan_drivers)) {
+        elseif (isset($body['trunk']['tech']) && !array_key_exists($body['trunk']['tech'], $chan_drivers)) {
             return $response->withJson(array(
                 'code' => 501,
                 'data' => 'Technology not defined. Possible values (SIP or PJSIP)'
@@ -3109,7 +3097,7 @@ class FreePbxController extends Controller
                 'data' => 'Trunk Name not defined.'
             ));
         }
-        elseif (!isset($body['peercontext']) || !count($body['peercontext']) > 0) {
+        elseif (isset($body['peercontext']) || !count($body['peercontext']) > 0) {
             return $response->withJson(array(
                 'code' => 501,
                 'data' => 'Peer Context not defined.'
@@ -3911,8 +3899,8 @@ class FreePbxController extends Controller
             $recordingValues = array('force', 'dontcare', 'yes', 'no', 'never');
             $callRecording = array(
                 'extension'     =>  $outboundRouteId,
-                'cidnum'        =>  (isset($body['cidnum'])) ? $body['cidnum'] : '',
-                'callrecording' =>  (isset($body['callrecording']) && !in_array($body['callrecording'], $recordingValues)) ? $body['callrecording'] : 'dontcare',
+                'cidnum'        =>  (isset($body['route']['outcid'])) ? $body['route']['outcid'] : '',
+                'callrecording' =>  (isset($body['route']['callrecording']) && !in_array($body['route']['callrecording'], $recordingValues)) ? $body['route']['callrecording'] : 'dontcare',
                 'display'       =>  'routing'
             );
 
@@ -4116,8 +4104,8 @@ class FreePbxController extends Controller
             $recordingValues = array('force', 'dontcare', 'yes', 'no', 'never');
             $callRecording = array(
                 'extension'     =>  $outboundRouteId,
-                'cidnum'        =>  (isset($body['cidnum'])) ? $body['cidnum'] : '',
-                'callrecording' =>  (isset($body['callrecording']) && !in_array($body['callrecording'], $recordingValues)) ? $body['callrecording'] : 'dontcare',
+                'cidnum'        =>  (isset($body['route']['outcid'])) ? $body['outcid'] : '',
+                'callrecording' =>  (isset($body['route']['callrecording']) && !in_array($body['route']['callrecording'], $recordingValues)) ? $body['route']['callrecording'] : 'dontcare',
                 'display'       =>  'routing'
             );
 
@@ -4175,10 +4163,43 @@ class FreePbxController extends Controller
     }
     //End Outbound Routes
 
+    //Users
+    public function getAllUsers($request, $response){
+        $sql = "SELECT * FROM userman_users;";
+        $stmt = $this->c->db->query($sql);
+        $outboundRoutes = $stmt->fetchAll();
+
+        return $response->withJson(array(
+            'code' => 200,
+            'data' => $outboundRoutes
+        ));
+    }
+
+    //fwconsole commands
+    public function fwconsole($request, $response){
+        global $fwconsoleCommands;
+        $body = $request->getParsedBody();
+
+        switch($body['command']){
+            case 'reload':
+                $whichFwconsole = exec('which fwconsole');
+                $result = exec($whichFwconsole . ' ' . $body['command']);
+                return $response->withJson(array(
+                    'code' => 200,
+                    'data' => $result
+                ));
+                break;
+            default:
+                return $response->withJson(array(
+                    'code' => 500,
+                    'data' => 'Command not found. Possible Commands are: ' . implode(',', $fwconsoleCommands)
+                ));
+        }
+    }
 
     public function checkSQLite($request, $response){
         $body = $request->getParsedBody();
-        $sql = "SELECT * FROM astdb where key like '%/100%';";
+        $sql = "SELECT * FROM astdb where key like '%/101%';";
         $stmt = $this->c->sqlite->query($sql);
         $inboundRoutes = $stmt->fetchAll();
 

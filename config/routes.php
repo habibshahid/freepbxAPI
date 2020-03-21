@@ -37,5 +37,13 @@ $app->post('/api/v1/outboundRoute', 'FreePbxController:createOutboundRoute');
 $app->put('/api/v1/outboundRoute/{routeName}', 'FreePbxController:updateOutboundRoute');
 $app->delete('/api/v1/outboundRoute/{routeName}', 'FreePbxController:deleteOutboundRoute');
 
+//UCP Users
+$app->get('/api/v1/users', 'FreePbxController:getAllUsers');
+$app->post('/api/v1/user', 'FreePbxController:createOutboundRoute');
+$app->put('/api/v1/user/{username}', 'FreePbxController:updateOutboundRoute');
+$app->delete('/api/v1/user/{userame}', 'FreePbxController:deleteOutboundRoute');
+
+//fwconsole commands
+$app->post('/api/v1/fwconsole', 'FreePbxController:fwconsole');
 
 $app->get('/api/v1/checkSQLite', 'FreePbxController:checkSQLite');
